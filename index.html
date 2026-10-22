@@ -18,6 +18,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="./src/styles.css" />
   <style>
+    /* Оверлей принудительного поворота телефона из tanks.html */
     #rotate-overlay {
       display: none;
       position: fixed;
@@ -40,6 +41,149 @@
     @media screen and (orientation: portrait) and (hover: none) and (pointer: coarse) {
       #rotate-overlay {
         display: flex;
+      }
+    }
+
+    /* Боковые зоны управления */
+    .arena-layout .pad-side {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .arena-layout .touch-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .joystick-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .joystick-zone .control-caption {
+      display: none;
+    }
+
+    /* Аналоговый стик (размеры и положение из tanks.html: 168x168, translateY(2cm)) */
+    #joystickBase {
+      position: relative;
+      width: 168px !important;
+      height: 168px !important;
+      border-radius: 50% !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(2cm);
+      will-change: transform;
+    }
+
+    /* Шляпка стика (72x72) */
+    #joystickKnob {
+      position: absolute;
+      width: 72px !important;
+      height: 72px !important;
+      border-radius: 50% !important;
+      pointer-events: none;
+      z-index: 2;
+      will-change: transform;
+    }
+
+    /* Контейнер кнопок действий (196x196, translateY(2cm)) */
+    #actionPad {
+      position: relative;
+      width: 196px !important;
+      height: 196px !important;
+      transform: translateY(2cm);
+      display: block !important;
+      will-change: transform;
+    }
+
+    /* Кнопки действий (78x78, круглые) */
+    #actionPad .action-button {
+      position: absolute !important;
+      width: 78px !important;
+      height: 78px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      padding: 0;
+      box-sizing: border-box;
+      margin: 0;
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+
+    #actionPad .action-button .action-glyph svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    #actionPad .action-button .action-label {
+      font-size: 10px;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    #actionPad .action-button.is-pressed,
+    #actionPad .action-button:active {
+      transform: scale(0.95);
+      filter: brightness(1.35);
+    }
+
+    /* Расположение кнопок ромбом в точности как в tanks.html */
+    /* 1. Нижняя кнопка (Бомба / аналог btn-1) */
+    #actionPad .action-bomb {
+      left: 59px !important;
+      top: 118px !important;
+      bottom: auto !important;
+      right: auto !important;
+    }
+
+    /* 2. Правая кнопка (Действие / аналог btn-2) */
+    #actionPad .action-hand {
+      left: 118px !important;
+      top: 59px !important;
+      bottom: auto !important;
+      right: auto !important;
+    }
+
+    /* 3. Левая кнопка (Детонатор / аналог btn-3) */
+    #actionPad .action-detonate {
+      left: 0 !important;
+      top: 59px !important;
+      bottom: auto !important;
+      right: auto !important;
+    }
+
+    /* 4. Верхняя кнопка (Пауза / аналог btn-4) */
+    #actionPad .action-pause {
+      left: 59px !important;
+      top: 0 !important;
+      bottom: auto !important;
+      right: auto !important;
+    }
+
+    /* Масштабирование для экранов <= 860px из tanks.html */
+    @media (max-width: 860px) {
+      #joystickBase {
+        transform: translateY(2cm) scale(0.8) !important;
+      }
+
+      #actionPad {
+        transform: translateY(2cm) scale(0.8) !important;
       }
     }
   </style>
