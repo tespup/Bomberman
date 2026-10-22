@@ -366,9 +366,18 @@ class BombManApp {
       actionPad: document.getElementById("actionPad"),
       joystickBase: document.getElementById("joystickBase"),
       joystickKnob: document.getElementById("joystickKnob"),
+      arenaLayout: document.querySelector(".arena-layout"),
       arenaShell: document.getElementById("arenaShell"),
       arenaFrame: document.getElementById("arenaFrame"),
       gameCanvas: document.getElementById("gameCanvas"),
+      mobileHudLeft: document.getElementById("mobileHudLeft"),
+      mobileHudRight: document.getElementById("mobileHudRight"),
+      mhKicker: document.getElementById("mhKicker"),
+      mhLevelName: document.getElementById("mhLevelName"),
+      mhTimer: document.getElementById("mhTimer"),
+      mhEnemies: document.getElementById("mhEnemies"),
+      mhHearts: document.getElementById("mhHearts"),
+      mhScore: document.getElementById("mhScore"),
       fpsLabel: document.getElementById("fpsLabel"),
       gameFooterHint: document.getElementById("gameFooterHint"),
       p1Equipped: document.getElementById("p1Equipped"),
@@ -522,18 +531,36 @@ class BombManApp {
 
   #fitArena() {
     if (this.screen !== "game" || !this.dom.arenaShell) return;
-    const shell = this.dom.arenaShell;
-    const availableW = Math.max(80, shell.clientWidth - 4);
-    const availableH = Math.max(80, shell.clientHeight - 4);
     const ratio = 15 / 13;
-    let width = availableW;
-    let height = width / ratio;
-    if (height > availableH) {
-      height = availableH;
+    let width;
+    let height;
+    if (this.isMobile) {
+      // Full-bleed phone layout. The side columns are equal flex items, so the
+      // stick and buttons are centred in the exact gaps around the arena.
+      const layout = this.dom.arenaLayout;
+      const fullW = layout?.clientWidth || window.innerWidth;
+      const fullH = layout?.clientHeight || window.innerHeight;
+      height = fullH;
       width = height * ratio;
+      const requiredSide = Math.max(118, Math.min(178, fullW * 0.17));
+      const maxWidth = fullW - requiredSide * 2;
+      if (width > maxWidth) {
+        width = maxWidth;
+        height = width / ratio;
+      }
+    } else {
+      const shell = this.dom.arenaShell;
+      const availableW = Math.max(80, shell.clientWidth - 4);
+      const availableH = Math.max(80, shell.clientHeight - 4);
+      width = availableW;
+      height = width / ratio;
+      if (height > availableH) {
+        height = availableH;
+        width = height * ratio;
+      }
     }
-    width = Math.floor(width);
-    height = Math.floor(height);
+    width = Math.max(120, Math.floor(width));
+    height = Math.max(100, Math.floor(height));
     this.dom.arenaFrame.style.width = `${width}px`;
     this.dom.arenaFrame.style.height = `${height}px`;
     this.renderer.resize();
@@ -756,6 +783,13 @@ class BombManApp {
     this.dom.hudScore.textContent = "0";
     this.dom.hudEnemies.textContent = versus ? "1" : String(level.enemies.length);
     this.dom.hudRound.textContent = `${this.game.round} · ${this.vsWins.p1}:${this.vsWins.p2}`;
+    if (this.dom.mhKicker) {
+      this.dom.mhKicker.textContent = versus ? `ДУЭЛЬ · РАУНД ${this.game.round}` : `УРОВЕНЬ ${String(level.number).padStart(2, "0")}`;
+      this.dom.mhLevelName.textContent = level.name;
+      this.dom.mhTimer.textContent = "00:00";
+      this.dom.mhScore.textContent = "0";
+      this.dom.mhEnemies.textContent = versus ? "1" : String(level.enemies.length);
+    }
     this.dom.objectivePill.classList.remove("is-hidden");
     this.dom.objectiveText.textContent = versus ? "Уничтожьте соперника" : "Уничтожьте всех врагов";
     this.dom.powerStrip.innerHTML = "";
@@ -1242,6 +1276,15 @@ class BombManApp {
       hud.mode === "versus" ? String(Math.max(0, this.game.players.filter((p) => p.alive).length - (player?.alive ? 0 : 1))) : String(hud.enemiesRemaining);
     this.dom.hudScore.textContent = formatScore(hud.score);
     this.dom.hudTimer.textContent = hud.timeLabel;
+    if (this.dom.mhKicker) {
+      this.dom.mhKicker.textContent =
+        hud.mode === "versus" ? `ДУЭЛЬ · РАУНД ${hud.round}` : `УРОВЕНЬ ${String(hud.level).padStart(2, "0")}`;
+      this.dom.mhLevelName.textContent = hud.levelName;
+      this.dom.mhTimer.textContent = hud.timeLabel;
+      this.dom.mhScore.textContent = formatScore(hud.score);
+      this.dom.mhEnemies.textContent =
+        hud.mode === "versus" ? String(Math.max(0, this.game.players.filter((p) => p.alive).length - (player?.alive ? 0 : 1))) : String(hud.enemiesRemaining);
+    }
     this.dom.hudObjectiveLabel.textContent = hud.mode === "versus" ? "СОПЕРНИК" : "ВРАГИ";
     this.dom.hudRound.textContent = `${hud.round} · ${this.vsWins.p1}:${this.vsWins.p2}`;
     this.dom.objectiveText.textContent =
@@ -1266,7 +1309,9 @@ class BombManApp {
     if (hud.player.armor > 0) {
       hearts.push(`<span class="armor-badge" title="Доспехи: ${hud.player.armor}">${hud.player.armor}</span>`);
     }
-    this.dom.hudHearts.innerHTML = hearts.join("");
+    const html = hearts.join("");
+    this.dom.hudHearts.innerHTML = html;
+    if (this.dom.mhHearts) this.dom.mhHearts.innerHTML = html;
   }
 
   #renderPowerStrip(hud) {
@@ -1374,12 +1419,19 @@ class BombManApp {
     if (!this.game.level) return;
     if (timestamp - this.lastTimerUpdate > 80) {
       this.lastTimerUpdate = timestamp;
-      this.dom.hudTimer.textContent = formatTime(this.game.elapsed);
-      this.dom.hudScore.textContent = formatScore(this.game.score);
-      if (this.game.mode === "versus") {
-        this.dom.hudEnemies.textContent = String(this.game.players.filter((p) => p.alive).length > 1 ? 1 : 0);
-      } else {
-        this.dom.hudEnemies.textContent = String(this.game.getEnemiesRemaining());
+      const timeLabel = formatTime(this.game.elapsed);
+      const scoreLabel = formatScore(this.game.score);
+      const enemiesLabel =
+        this.game.mode === "versus"
+          ? String(this.game.players.filter((p) => p.alive).length > 1 ? 1 : 0)
+          : String(this.game.getEnemiesRemaining());
+      this.dom.hudTimer.textContent = timeLabel;
+      this.dom.hudScore.textContent = scoreLabel;
+      this.dom.hudEnemies.textContent = enemiesLabel;
+      if (this.dom.mhTimer) {
+        this.dom.mhTimer.textContent = timeLabel;
+        this.dom.mhScore.textContent = scoreLabel;
+        this.dom.mhEnemies.textContent = enemiesLabel;
       }
       if (this.game.portalActive) {
         this.dom.objectiveText.textContent = this.game.mode === "versus" ? "Уничтожьте соперника" : "Врата открыты — доберитесь до выхода";

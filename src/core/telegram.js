@@ -115,6 +115,7 @@ class TelegramBridge {
       if (this.supports("7.10")) this.tg.setBottomBarColor?.("#04060d");
       if (this.supports("7.7")) this.tg.disableVerticalSwipes?.();
       this.tg.onEvent?.("viewportChanged", () => {
+        this._applyViewportInsets();
         this._notifyOrientation();
       });
       this.tg.onEvent?.("themeChanged", () => {
@@ -122,6 +123,7 @@ class TelegramBridge {
         if (this.supports("6.1")) this.tg.setHeaderColor?.("#060913");
       });
       this.ready = true;
+      this._applyViewportInsets();
     } catch (error) {
       console.warn("Telegram init failed", error);
       this.ready = true;
@@ -135,7 +137,27 @@ class TelegramBridge {
     window.addEventListener("resize", this._orientationListener);
   }
 
+  _applyViewportInsets() {
+    if (!this.tg) return;
+    try {
+      // Bot API 8.0+: keeps the in-game HUD below the system status bar and
+      // Telegram's own close/menu controls.
+      const contentTop = Number(this.tg.contentSafeAreaInset?.top);
+      if (Number.isFinite(contentTop) && contentTop > 0) {
+        document.documentElement.style.setProperty("--game-ui-top", `${Math.round(contentTop + 6)}px`);
+        return;
+      }
+      const safeTop = Number(this.tg.safeAreaInset?.top);
+      if (Number.isFinite(safeTop) && safeTop > 0) {
+        document.documentElement.style.setProperty("--game-ui-top", `${Math.round(safeTop + 54)}px`);
+      }
+    } catch {
+      /* optional Bot API 8.0 data */
+    }
+  }
+
   _notifyOrientation() {
+    this._applyViewportInsets();
     window.dispatchEvent(new CustomEvent("bombman:orientation"));
   }
 

@@ -4955,6 +4955,261 @@ body.touch-size-large .action-pause {
   }
 }
 
+/* =========================================================================
+   Phone gameplay: full-bleed arena, side-mounted HUD
+   ========================================================================= */
+
+:root {
+  --game-ui-top: calc(64px + env(safe-area-inset-top, 0px));
+}
+
+body.is-mobile .screen-game {
+  padding: 0;
+  height: 100dvh;
+  min-height: 0;
+}
+
+body.is-mobile .game-hud,
+body.is-mobile .game-footer {
+  display: none !important;
+}
+
+body.is-mobile .arena-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 0;
+  margin: 0;
+}
+
+body.is-mobile .pad-side {
+  position: relative;
+  flex: 1 1 0;
+  height: 100%;
+  min-width: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+body.is-mobile .pad-left,
+body.is-mobile .pad-right {
+  justify-content: center;
+}
+
+body.is-mobile .arena-shell {
+  flex: 0 0 auto;
+  height: 100%;
+  padding: 0;
+  align-items: stretch;
+  justify-content: center;
+}
+
+body.is-mobile .arena-frame {
+  height: 100%;
+  max-width: none;
+  border-top: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.is-mobile .arena-vignette {
+  border-radius: 0;
+}
+
+body.is-mobile .arena-corner {
+  display: none;
+}
+
+body.is-mobile .touch-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  /* The old top HUD used to push this row down. Keep the controls at the same
+     vertical level now that the arena is full-height. */
+  transform: translateY(19px);
+}
+
+body.is-mobile .game-objective {
+  display: none;
+}
+
+body.is-mobile .context-hint {
+  display: none;
+}
+
+body.is-mobile .game-toast-layer {
+  top: calc(var(--game-ui-top) + 8px);
+}
+
+body.is-mobile .power-strip {
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-side-hud {
+  position: absolute;
+  top: var(--game-ui-top);
+  left: 50%;
+  z-index: 12;
+  display: none;
+  flex-direction: column;
+  width: min(92%, 168px);
+  padding: 7px 9px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(6, 12, 20, 0.72);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+body.is-mobile .mobile-side-hud {
+  display: flex;
+}
+
+.msh-kicker {
+  color: var(--mint);
+  font-family: var(--font-display);
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+}
+
+.msh-name {
+  max-width: 100%;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #e9eef3;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msh-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.msh-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.msh-stat i {
+  color: var(--muted-2);
+  font-family: var(--font-display);
+  font-size: 5.5px;
+  font-style: normal;
+  letter-spacing: 0.1em;
+}
+
+.msh-stat b {
+  color: #f0f3f5;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.msh-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 19px;
+}
+
+.msh-hearts {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.msh-hearts .heart {
+  width: 11px;
+  height: 10px;
+}
+
+.msh-hearts .armor-badge {
+  min-width: 14px;
+  height: 12px;
+  font-size: 6px;
+}
+
+.msh-pause {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 23px;
+  height: 23px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  color: #ffd0bd;
+  background: rgba(255, 139, 84, 0.1);
+  pointer-events: auto;
+}
+
+.msh-pause svg {
+  width: 11px;
+  height: 11px;
+}
+
+.msh-score-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.msh-score-row .msh-stat {
+  width: 100%;
+  justify-content: space-between;
+}
+
+@media (max-height: 330px) {
+  .mobile-side-hud {
+    padding: 5px 7px 6px;
+    border-radius: 9px;
+  }
+
+  .msh-name {
+    font-size: 8px;
+  }
+
+  .msh-row {
+    margin-top: 3px;
+  }
+
+  .msh-pause {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

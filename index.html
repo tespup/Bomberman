@@ -390,6 +390,14 @@
       <div class="arena-layout">
         <!-- Левая зона: СТИК -->
         <aside class="pad-side pad-left">
+          <div class="mobile-side-hud msh-left" id="mobileHudLeft">
+            <div class="msh-kicker" id="mhKicker">УРОВЕНЬ 01</div>
+            <div class="msh-name" id="mhLevelName">Изумрудные руины</div>
+            <div class="msh-row">
+              <span class="msh-stat"><i>ВРЕМЯ</i><b id="mhTimer">00:00</b></span>
+              <span class="msh-stat"><i>ВРАГИ</i><b id="mhEnemies">3</b></span>
+            </div>
+          </div>
           <div class="touch-controls mobile-only">
             <div class="joystick-zone" id="joystickZone">
               <div class="joystick-base" id="joystickBase">
@@ -434,6 +442,17 @@
 
         <!-- Правая зона: КНОПКИ NES -->
         <aside class="pad-side pad-right">
+          <div class="mobile-side-hud msh-right" id="mobileHudRight">
+            <div class="msh-top">
+              <div class="msh-hearts" id="mhHearts"></div>
+              <button class="msh-pause" data-action="pause" aria-label="Пауза и выход в меню" title="Пауза">
+                <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></svg>
+              </button>
+            </div>
+            <div class="msh-row msh-score-row">
+              <span class="msh-stat"><i>ОЧКИ</i><b id="mhScore">0</b></span>
+            </div>
+          </div>
           <div class="touch-controls mobile-only">
             <div class="action-pad" id="actionPad">
               <button class="action-button action-pause" data-game-btn="pause" aria-label="Пауза">

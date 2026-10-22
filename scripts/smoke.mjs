@@ -411,8 +411,30 @@ try {
   await screenshot("11-game-mobile.png");
   console.log("mobile body classes:", await evaluate("document.body.className"));
   console.log("mobile fps:", await evaluate("window.__BOMBMAN__.fps"));
-  console.log("mobile frame:", await evaluate("(() => { const f=document.getElementById('arenaFrame'); return {w:f.clientWidth,h:f.clientHeight,left:f.getBoundingClientRect().left}; })()"));
-  console.log("joystick:", await evaluate("(() => { const j=document.getElementById('joystickBase'); return j ? j.getBoundingClientRect().width : 0; })()"));
+  const mobileLayout = await evaluate(`(() => {
+    const frame = document.getElementById('arenaFrame').getBoundingClientRect();
+    const joy = document.getElementById('joystickBase').getBoundingClientRect();
+    const pad = document.getElementById('actionPad').getBoundingClientRect();
+    const leftHud = document.getElementById('mobileHudLeft').getBoundingClientRect();
+    const oldHud = document.querySelector('.game-hud');
+    return {
+      vw: innerWidth,
+      vh: innerHeight,
+      frame: { left: frame.left, right: frame.right, top: frame.top, bottom: frame.bottom },
+      joy: { cx: joy.left + joy.width / 2, width: joy.width },
+      pad: { cx: pad.left + pad.width / 2, width: pad.width },
+      hud: { top: leftHud.top, display: getComputedStyle(document.getElementById('mobileHudLeft')).display },
+      oldHudDisplay: getComputedStyle(oldHud).display
+    };
+  })()`);
+  console.log("mobile layout:", mobileLayout);
+  expect(Math.abs(mobileLayout.frame.left - (mobileLayout.vw - mobileLayout.frame.right)) <= 1, `arena side gaps are unequal: ${JSON.stringify(mobileLayout.frame)}`);
+  expect(Math.abs(mobileLayout.frame.top) <= 1, `arena is not flush with the top: ${JSON.stringify(mobileLayout.frame)}`);
+  expect(Math.abs(mobileLayout.frame.bottom - mobileLayout.vh) <= 1, `arena is not flush with the bottom: ${JSON.stringify(mobileLayout.frame)}`);
+  expect(Math.abs(mobileLayout.joy.cx - mobileLayout.frame.left / 2) <= 2, `joystick is not centred in the left gap: ${JSON.stringify(mobileLayout)}`);
+  expect(Math.abs(mobileLayout.pad.cx - (mobileLayout.frame.right + mobileLayout.vw) / 2) <= 2, `buttons are not centred in the right gap: ${JSON.stringify(mobileLayout)}`);
+  expect(mobileLayout.hud.display !== "none" && mobileLayout.hud.top > 40, `mobile HUD is not below the phone status area: ${JSON.stringify(mobileLayout.hud)}`);
+  expect(mobileLayout.oldHudDisplay === "none", "old top HUD must be hidden on mobile");
 
   // Touch joystick + action button.
   const rects = await evaluate(`(() => {
@@ -458,7 +480,7 @@ try {
   await sleep(300);
   await click("#bootPlay");
   await sleep(700);
-  const portraitPrompt = await evaluate("!document.getElementById('orientationOverlay').hidden");
+  const portraitPrompt = await evaluate("getComputedStyle(document.getElementById('rotate-overlay')).display !== 'none'");
   expect(portraitPrompt, "orientation prompt should be visible in portrait");
   console.log("portrait overlay visible:", portraitPrompt);
   await screenshot("12-portrait-prompt.png");
@@ -469,7 +491,7 @@ try {
     mobile: true
   });
   await sleep(500);
-  const landscapeHidden = await evaluate("document.getElementById('orientationOverlay').hidden");
+  const landscapeHidden = await evaluate("getComputedStyle(document.getElementById('rotate-overlay')).display === 'none'");
   expect(landscapeHidden, "orientation prompt should hide after rotating to landscape");
   console.log("landscape overlay hidden:", landscapeHidden);
   await screenshot("13-landscape-after-rotate.png");
