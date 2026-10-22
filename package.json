@@ -1,0 +1,16 @@
+{
+  "name": "bombman-telegram",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BombMan — процедурная Bomberman-игра для Telegram Mini Apps",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node scripts/check.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

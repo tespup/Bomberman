@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#060913" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="BombMan — взрывная Telegram Mini App игра с 50 процедурными уровнями, 12 врагами и ездовыми существами." />
+  <title>BombMan — Telegram Mini App</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='28%25'%3E%3Cstop offset='0' stop-color='%235fffd0'/%3E%3Cstop offset='.55' stop-color='%2316b98f'/%3E%3Cstop offset='1' stop-color='%23062e3d'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='36' r='21' fill='url(%23g)'/%3E%3Cpath d='M34 17c1-5 7-7 11-3' fill='none' stroke='%23ffcc66' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='13' r='4' fill='%23ff6b35'/%3E%3Ccircle cx='24' cy='30' r='6' fill='%23fff' opacity='.45'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fonts load asynchronously so a slow font CDN never blocks the Mini App. -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="./src/styles.css" />
+  <!-- Async: a blocked telegram.org request must not leave a blank Mini App. -->
+  <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.dispatchEvent(new Event('telegram-sdk-ready'))"></script>
+</head>
+<body data-screen="home" class="is-loading">
+  <div id="app">
+    <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
+    <div class="ambient-grain" aria-hidden="true"></div>
+
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <section class="screen screen-home is-active" id="screen-home" aria-label="Главное меню">
+      <header class="home-topbar">
+        <div class="mini-brand">
+          <span class="mini-bomb" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="18" r="10" fill="currentColor"/><path d="M17 9c.5-3 3.6-4 5.7-2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="23.4" cy="6.8" r="2.2" fill="#ffb35c"/><circle cx="12.8" cy="15" r="2.8" fill="#fff" opacity=".45"/></svg>
+          </span>
+          <span>BOMBMAN</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="player-pill" id="playerPill">
+            <span class="player-avatar" id="playerAvatar">B</span>
+            <span class="player-meta"><b id="playerName">Игрок</b><small>Телеграм</small></span>
+          </div>
+          <button class="icon-button" data-action="quick-sound" aria-label="Включить или выключить звук" title="Звук">
+            <svg class="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+            <svg class="icon-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>
+          </button>
+          <button class="icon-button" data-action="settings" aria-label="Настройки" title="Настройки">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.65 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1a1.7 1.7 0 0 0 1.1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.38.33.72.6 1 .3.27.66.42 1.1.4h.1v4h-.1A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="home-content">
+        <div class="hero-stage" aria-hidden="true">
+          <div class="hero-orb hero-orb-a"></div>
+          <div class="hero-orb hero-orb-b"></div>
+          <canvas id="heroCanvas"></canvas>
+          <div class="hero-badge badge-levels"><b>50</b><span>уровней</span></div>
+          <div class="hero-badge badge-enemies"><b>12</b><span>врагов</span></div>
+          <div class="hero-plate">
+            <span class="plate-dot"></span>
+            <span id="heroCaption">Новая экспедиция сгенерирована</span>
+          </div>
+        </div>
+
+        <div class="menu-pane">
+          <div class="eyebrow"><span class="eyebrow-line"></span> TELEGRAM MINI APP <span class="live-dot">LIVE</span></div>
+          <h1 class="main-logo" aria-label="BombMan">
+            <span class="logo-bomb">BOMB</span><span class="logo-man">MAN</span>
+            <svg class="logo-spark" viewBox="0 0 60 60" fill="none" aria-hidden="true"><path d="M30 4v14M30 42v14M4 30h14M42 30h14M11.6 11.6l9.9 9.9M38.5 38.5l9.9 9.9M48.4 11.6l-9.9 9.9M21.5 38.5l-9.9 9.9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          </h1>
+          <p class="tagline">Заложи бомбу. Найди выход.<br /><em>Не доверяй тишине.</em></p>
+
+          <div class="menu-actions">
+            <button class="menu-button menu-button-primary" data-action="campaign" id="campaignButton">
+              <span class="menu-icon">
+                <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22V9l9-5 9 5v13l-9 4-9-4Z"/><path d="M5 9l9 5 9-5M14 14v9"/><path d="m10 17 2 2 4-5"/></svg>
+              </span>
+              <span class="menu-copy"><b>Кампания</b><small id="campaignSubtitle">Уровень 1 · Новая экспедиция</small></span>
+              <span class="menu-arrow">→</span>
+            </button>
+            <button class="menu-button menu-button-versus" data-action="versus" id="versusButton" hidden>
+              <span class="menu-icon">
+                <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="4"/><circle cx="20" cy="19" r="4"/><path d="m12 12 5 4M5 24v-2a4 4 0 0 1 4-4h2M23 4v2a4 4 0 0 1-4 4h-1"/></svg>
+              </span>
+              <span class="menu-copy"><b>Дуэль на двоих</b><small>Локальный бой · только на компьютере</small></span>
+              <span class="menu-arrow">→</span>
+            </button>
+            <div class="menu-secondary-row">
+              <button class="menu-button menu-button-small" data-action="levels">
+                <span class="menu-icon small"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+                <span class="menu-copy"><b>50 уровней</b><small>Выбор этапа</small></span>
+              </button>
+              <button class="menu-button menu-button-small" data-action="guide">
+                <span class="menu-icon small"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M8 8h8M8 12h5"/></svg></span>
+                <span class="menu-copy"><b>Энциклопедия</b><small>Враги и бонусы</small></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="home-progress">
+            <div class="home-progress-copy">
+              <span>ПРОГРЕСС КАМПАНИИ</span>
+              <b id="progressLabel">0 / 50</b>
+            </div>
+            <div class="progress-track"><span id="progressBar"></span></div>
+            <div class="home-stats">
+              <span><small>ОЧКИ</small><b id="totalScore">0</b></span>
+              <span><small>ЗВЁЗДЫ</small><b id="totalStars">0</b></span>
+              <span><small>ЛУЧШИЙ УРОВЕНЬ</small><b id="bestLevel">1</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="home-footer">
+        <span>Сделано для Telegram · играйте в горизонтальной ориентации</span>
+        <span class="footer-links"><button data-action="guide">Как играть</button><i></i><button data-action="settings">Настройки</button></span>
+      </footer>
+    </section>
+
+    <!-- ВЫБОР УРОВНЯ -->
+    <section class="screen screen-levels" id="screen-levels" aria-label="Выбор уровня">
+      <header class="inner-header">
+        <button class="back-button" data-action="home" aria-label="Назад в меню">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span>Меню</span>
+        </button>
+        <div class="inner-title"><span class="eyebrow">КАМПАНИЯ</span><h2>50 процедурных миров</h2></div>
+        <div class="level-header-progress"><b id="levelsUnlocked">1</b><span>/ 50 открыто</span></div>
+      </header>
+      <div class="levels-toolbar">
+        <p>Каждый этап — новые палитры, архитектура арены, декорации и облик противников.</p>
+        <div class="legend">
+          <span><i class="legend-dot complete"></i>пройден</span>
+          <span><i class="legend-dot current"></i>доступен</span>
+          <span><i class="legend-dot locked"></i>закрыт</span>
+        </div>
+      </div>
+      <div class="level-grid-wrap">
+        <div class="level-grid" id="levelGrid"></div>
+      </div>
+      <footer class="levels-footer">
+        <span id="levelsFooterText">Пройдите этап, чтобы открыть следующий.</span>
+        <button class="text-button" data-action="reset-progress">Сбросить прогресс</button>
+      </footer>
+    </section>
+
+    <!-- ИГРОВОЙ ЭКРАН -->
+    <section class="screen screen-game" id="screen-game" aria-label="Игровой экран">
+      <header class="game-hud">
+        <div class="hud-left">
+          <button class="hud-menu-button" data-action="pause" aria-label="Пауза и меню">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4" height="16" rx="1.5"/><rect x="15" y="4" width="4" height="16" rx="1.5"/></svg>
+            <span>Пауза</span>
+          </button>
+          <div class="hud-level">
+            <span class="hud-kicker" id="hudKicker">УРОВЕНЬ 01</span>
+            <b id="hudLevelName">Изумрудные руины</b>
+          </div>
+        </div>
+        <div class="hud-center">
+          <div class="hud-stat hud-timer"><span>ВРЕМЯ</span><b id="hudTimer">00:00</b></div>
+          <div class="hud-divider"></div>
+          <div class="hud-stat"><span id="hudObjectiveLabel">ВРАГИ</span><b id="hudEnemies">0</b></div>
+          <div class="hud-divider duo-only"></div>
+          <div class="hud-stat duo-only"><span>РАУНД</span><b id="hudRound">1 · 0:0</b></div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-hearts" id="hudHearts" aria-label="Здоровье"></div>
+          <div class="hud-score"><span>ОЧКИ</span><b id="hudScore">0</b></div>
+        </div>
+      </header>
+
+      <div class="arena-layout">
+        <aside class="pad-side pad-left">
+          <div class="touch-controls mobile-only">
+            <div class="joystick-zone" id="joystickZone">
+              <div class="joystick-base" id="joystickBase">
+                <span class="joystick-cross cross-up"></span><span class="joystick-cross cross-right"></span><span class="joystick-cross cross-down"></span><span class="joystick-cross cross-left"></span>
+                <div class="joystick-knob" id="joystickKnob">
+                  <span></span>
+                </div>
+              </div>
+              <div class="control-caption"><span class="caption-dot"></span>ДВИЖЕНИЕ</div>
+            </div>
+          </div>
+          <div class="desktop-panel desktop-only" id="desktopP1">
+            <div class="panel-player">
+              <span class="panel-avatar p1">P1</span>
+              <div><b>Игрок 1</b><small>Клавиатура</small></div>
+            </div>
+            <div class="panel-vitals" id="p1Vitals"></div>
+            <div class="panel-equipped" id="p1Equipped"></div>
+            <div class="key-hints">
+              <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> движение</span>
+              <span><kbd>Space</kbd> бомба</span>
+              <span><kbd>Q</kbd> детонатор</span>
+              <span><kbd>E</kbd> действие</span>
+            </div>
+          </div>
+        </aside>
+
+        <div class="arena-shell" id="arenaShell">
+          <div class="arena-frame" id="arenaFrame">
+            <canvas id="gameCanvas" aria-label="Игровое поле BombMan"></canvas>
+            <div class="arena-vignette"></div>
+            <div class="arena-corner top-left"></div><div class="arena-corner top-right"></div><div class="arena-corner bottom-left"></div><div class="arena-corner bottom-right"></div>
+            <div class="game-objective" id="objectivePill"><span class="objective-icon">◆</span><span id="objectiveText">Уничтожьте всех врагов</span></div>
+            <div class="power-strip" id="powerStrip" aria-label="Активные бонусы"></div>
+            <div class="context-hint" id="contextHint"></div>
+            <div class="game-toast-layer" id="gameToastLayer"></div>
+          </div>
+        </div>
+
+        <aside class="pad-side pad-right">
+          <div class="touch-controls mobile-only">
+            <div class="action-pad" id="actionPad">
+              <button class="action-button action-bomb" data-game-btn="bomb" aria-label="Поставить бомбу">
+                <span class="action-glyph">
+                  <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="19" r="9" fill="currentColor"/><path d="M17 10c.5-3 3.4-4 5.6-2.1" stroke="#ffd479" stroke-width="2.4" stroke-linecap="round"/><circle cx="23.3" cy="7.2" r="2.2" fill="#ff794d"/><circle cx="12.5" cy="16.2" r="2.6" fill="#fff" fill-opacity=".35"/></svg>
+                </span>
+                <span class="action-label">Бомба</span>
+              </button>
+              <button class="action-button action-hand" data-game-btn="action" aria-label="Действие">
+                <span class="action-glyph">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 22c-2-4-5-7-5-10a3 3 0 0 1 5.4-1.8L14 14V6a3 3 0 0 1 6 0v8-4a3 3 0 0 1 6 0v9c0 5-3 8-8 8h-2c-2 0-3.6-1.2-5-5Z"/></svg>
+                </span>
+                <span class="action-label" id="actionLabel">Действие</span>
+              </button>
+              <button class="action-button action-detonate" data-game-btn="detonate" aria-label="Детонатор">
+                <span class="action-glyph">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="13" height="20" rx="3"/><path d="M11 9h5M11 13h5M12 19h3"/><path d="m23 10 3-3M26 13l4-1M22 17l3 2"/></svg>
+                </span>
+                <span class="action-label">Взрыв</span>
+              </button>
+              <button class="action-button action-pause" data-game-btn="pause" aria-label="Пауза">
+                <span class="action-glyph">
+                  <svg viewBox="0 0 32 32" fill="currentColor"><rect x="8" y="6" width="5" height="20" rx="2"/><rect x="19" y="6" width="5" height="20" rx="2"/></svg>
+                </span>
+                <span class="action-label">Пауза</span>
+              </button>
+            </div>
+          </div>
+          <div class="desktop-panel desktop-only" id="desktopP2">
+            <div class="panel-player">
+              <span class="panel-avatar p2">P2</span>
+              <div><b>Игрок 2</b><small>Дуэль на одном экране</small></div>
+            </div>
+            <div class="panel-vitals" id="p2Vitals"></div>
+            <div class="panel-equipped" id="p2Equipped"></div>
+            <div class="key-hints">
+              <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> движение</span>
+              <span><kbd>F</kbd> бомба</span>
+              <span><kbd>G</kbd> детонатор</span>
+              <span><kbd>H</kbd> действие</span>
+            </div>
+          </div>
+          <div class="desktop-panel desktop-solo-note desktop-only" id="desktopSoloNote">
+            <span class="solo-note-icon">⌁</span>
+            <b>Совет</b>
+            <p>Бомбы разрушают хрупкие блоки. Подбирайте бонусы и ищите врата после победы над всеми врагами.</p>
+          </div>
+        </aside>
+      </div>
+      <footer class="game-footer">
+        <span id="gameFooterHint">Пробел — бомба · Q — детонатор · E — действие · Esc — пауза</span>
+        <span class="game-footer-right"><i class="live-dot"></i><span id="fpsLabel">60 FPS</span></span>
+      </footer>
+    </section>
+  </div>
+
+  <!-- ПОВОРОТ ТЕЛЕФОНА -->
+  <div class="orientation-overlay" id="orientationOverlay" hidden>
+    <div class="rotate-visual">
+      <div class="phone-outline"><span class="phone-notch"></span><span class="phone-screen"><i></i><i></i><i></i></span></div>
+      <span class="rotate-arrow">↻</span>
+    </div>
+    <span class="eyebrow">ПОЛНЫЙ ЭКРАН</span>
+    <h2>Поверните телефон</h2>
+    <p>BombMan создан для горизонтальной ориентации. Так арена, стик и кнопки поместятся идеально.</p>
+    <div class="rotate-tips"><span><i>1</i> Поверните устройство</span><span><i>2</i> Играйте двумя пальцами</span></div>
+    <button class="text-button subtle" data-action="force-portrait">Остаться в меню без игры</button>
+  </div>
+
+  <!-- СТАРТОВЫЙ ЭКРАН -->
+  <div class="boot-splash" id="bootSplash">
+    <div class="boot-grid" aria-hidden="true"></div>
+    <div class="boot-glow"></div>
+    <div class="boot-content">
+      <div class="boot-kicker"><span></span> TELEGRAM MINI APP <span></span></div>
+      <div class="boot-logo"><span>BOMB</span><i>MAN</i></div>
+      <p>50 миров. 12 чудовищ. Одна искра.</p>
+      <button class="boot-play" id="bootPlay" aria-label="Играть">
+        <span class="boot-play-ring"></span>
+        <span class="boot-play-icon">▶</span>
+        <span class="boot-play-copy"><b>ИГРАТЬ</b><small>нажмите, чтобы начать</small></span>
+      </button>
+      <div class="boot-settings">
+        <button class="boot-toggle is-active" id="bootSound" type="button"><span class="toggle-led"></span>Звук включён</button>
+        <span class="boot-note">Лучше всего в горизонтальной ориентации</span>
+      </div>
+    </div>
+    <div class="boot-footer"><span>v1.0</span><span>PROCEDURAL ENGINE</span></div>
+  </div>
+
+  <!-- МОДАЛЬНЫЕ ОКНА -->
+  <div class="modal-root" id="modalRoot" aria-live="polite"></div>
+  <div class="toast-root" id="toastRoot" aria-live="polite"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
