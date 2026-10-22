@@ -28,6 +28,81 @@ const STAR = "★";
 
 const THEME_BOOT_PALETTE = createPalette(7);
 
+// ---------------------------------------------------------------------------
+// Telegram Bridge & Fullscreen (по аналогии с Tanks)
+// ---------------------------------------------------------------------------
+const isMobileClient = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+function sendTgEvent(eventType, eventData) {
+  const dataStr = eventData ? JSON.stringify(eventData) : '';
+  try {
+    if (window.TelegramWebviewProxy && window.TelegramWebviewProxy.postEvent) {
+      window.TelegramWebviewProxy.postEvent(eventType, dataStr);
+    } else if (window.external && window.external.invoke) {
+      window.external.invoke(JSON.stringify({ eventType: eventType, eventData: eventData }));
+    } else if (window.parent !== window) {
+      window.parent.postMessage(JSON.stringify({ eventType: eventType, eventData: eventData }), '*');
+    }
+  } catch (e) {
+    // Ошибки моста не должны ломать игру
+  }
+}
+
+sendTgEvent('web_app_ready', null);
+sendTgEvent('web_app_expand', null);
+sendTgEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: false });
+
+function enforceLandscape() {
+  if (!isMobileClient) return;
+
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+
+  const isLandscape = window.innerWidth > window.innerHeight;
+  if (isLandscape) {
+    sendTgEvent('web_app_toggle_orientation_lock', { locked: true });
+  } else {
+    sendTgEvent('web_app_toggle_orientation_lock', { locked: false });
+  }
+}
+
+window.addEventListener('resize', enforceLandscape);
+window.addEventListener('orientationchange', () => {
+  setTimeout(enforceLandscape, 50);
+  setTimeout(enforceLandscape, 250);
+});
+enforceLandscape();
+
+if (!isMobileClient) {
+  sendTgEvent('web_app_exit_fullscreen', null);
+  setTimeout(() => {
+    sendTgEvent('web_app_exit_fullscreen', null);
+  }, 150);
+}
+
+function requestFS() {
+  if (!isMobileClient) return;
+
+  sendTgEvent('web_app_expand', null);
+  sendTgEvent('web_app_request_fullscreen', null);
+  enforceLandscape();
+}
+
+if (isMobileClient) {
+  requestFS();
+  setTimeout(requestFS, 200);
+}
+
+const onceFS = () => {
+  requestFS();
+  document.removeEventListener('touchstart', onceFS);
+  document.removeEventListener('click', onceFS);
+};
+
+document.addEventListener('touchstart', onceFS, { once: true, passive: true });
+document.addEventListener('click', onceFS, { once: true });
+
 class AmbientBackdrop {
   constructor(canvas) {
     this.canvas = canvas;
@@ -368,6 +443,7 @@ class BombManApp {
     buttons.forEach((button) => {
       const activate = (event) => {
         if (event) event.preventDefault();
+        requestFS();
         if (this.screen !== "game") return;
         const type = button.dataset.gameBtn;
         button.classList.add("is-pressed");
@@ -391,24 +467,15 @@ class BombManApp {
   async #boot() {
     if (this.booted) return;
     this.booted = true;
+    requestFS();
     document.body.classList.remove("is-loading");
     document.body.classList.add("booted");
     this.dom.bootSplash.setAttribute("aria-hidden", "true");
-    // Start fullscreen synchronously inside the user gesture; mobile browsers
-    // otherwise reject the request after the awaited audio unlock.
-    const fullscreenPromise = this.isMobile ? telegram.requestFullscreen() : null;
     await this.audio.unlock();
     this.audio.setSettings(this.settings);
     if (this.settings.music) this.audio.startMusic("menu");
     this.#updateSoundUi();
-    if (fullscreenPromise) {
-      try {
-        await fullscreenPromise;
-        telegram.lockOrientation();
-      } catch {
-        /* Fullscreen and orientation lock are best-effort. */
-      }
-    }
+    requestFS();
     setTimeout(() => {
       this.#updateOrientation();
       this.#onResize();
@@ -510,6 +577,7 @@ class BombManApp {
 
   #handleAction(action, target, event) {
     if (event) event.preventDefault();
+    requestFS();
     switch (action) {
       case "campaign":
         this.#startCampaignFromMenu();
@@ -576,6 +644,7 @@ class BombManApp {
   }
 
   #startCampaignFromMenu() {
+    requestFS();
     if (this.isMobile && telegram.isPortrait) {
       this.#updateOrientation(true);
       return;
@@ -611,6 +680,7 @@ class BombManApp {
     const level = Number(target.dataset.level);
     if (!level || target.disabled || target.classList.contains("locked")) return;
     if (!this.save.isLevelUnlocked(level)) return;
+    requestFS();
     this.startCampaign(level, { loadout: this.save.run?.loadout || null });
   }
 
@@ -619,6 +689,7 @@ class BombManApp {
   // -------------------------------------------------------------------------
 
   startCampaign(levelNumber, options = {}) {
+    requestFS();
     if (this.isMobile && telegram.isPortrait) {
       this.#updateOrientation(true);
       this.#toast("Поверните телефон горизонтально");
@@ -1399,6 +1470,7 @@ class BombManApp {
       let palette = this._levelCardCache.get(level);
       if (!palette) {
         palette = createPalette(level);
+        this._levelCardCardCache?.set(level, palette);
         this._levelCardCache.set(level, palette);
       }
       const unlocked = level <= progress.unlocked;
