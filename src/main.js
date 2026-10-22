@@ -218,7 +218,6 @@ class BombManApp {
     this.title = "BombMan";
     this.screen = "home";
     this.booted = false;
-    this.allowPortrait = false;
     this.pausedByOrientation = false;
     this.currentHud = null;
     this.activeModal = null;
@@ -293,6 +292,7 @@ class BombManApp {
     this.#renderKeyHints();
     this.#setScreen("home", { skipInput: true });
     this.#updateBootUi();
+    this.#updateOrientation();
 
     this.renderer.onResize = () => this.#fitArena();
 
@@ -332,7 +332,7 @@ class BombManApp {
       bootSplash: document.getElementById("bootSplash"),
       bootPlay: document.getElementById("bootPlay"),
       bootSound: document.getElementById("bootSound"),
-      orientation: document.getElementById("orientationOverlay"),
+      orientation: document.getElementById("rotate-overlay"),
       campaignSubtitle: document.getElementById("campaignSubtitle"),
       versusButton: document.getElementById("versusButton"),
       playerName: document.getElementById("playerName"),
@@ -391,12 +391,6 @@ class BombManApp {
       this.#updateBootUi();
       this.#updateSoundUi();
       this.#toast(enable ? "Звук включён" : "Звук выключен");
-    });
-
-    this.dom.orientation.querySelector('[data-action="force-portrait"]')?.addEventListener("click", () => {
-      this.allowPortrait = true;
-      this.dom.orientation.hidden = true;
-      if (this.screen === "game") this.#goHome();
     });
 
     document.addEventListener(
@@ -495,8 +489,6 @@ class BombManApp {
     this.frameTimes.push(dt);
     if (this.frameTimes.length > 90) this.frameTimes.shift();
 
-    // The ambient backdrop sits behind the opaque game canvas; freeze it while
-    // playing so all CPU/GPU time goes into the arena and touch response.
     if (this.screen !== "game") {
       this.ambient.render(dt, this.globalTime);
     }
@@ -606,10 +598,6 @@ class BombManApp {
       case "reset-progress":
         this.#confirmResetProgress();
         break;
-      case "force-portrait":
-        this.allowPortrait = true;
-        this.dom.orientation.hidden = true;
-        break;
       default:
         break;
     }
@@ -623,8 +611,6 @@ class BombManApp {
         return;
       }
       if (["result", "gameover", "versus-result"].includes(this.activeModal.type)) {
-        // These overlays require an explicit choice; ignoring Escape prevents
-        // stranding the player in a finished game with no controls.
         return;
       }
       this.closeModal();
@@ -645,8 +631,9 @@ class BombManApp {
 
   #startCampaignFromMenu() {
     requestFS();
-    if (this.isMobile && telegram.isPortrait) {
-      this.#updateOrientation(true);
+    const isPortrait = window.innerWidth < window.innerHeight;
+    if ((this.isMobile || isMobileClient) && isPortrait) {
+      this.#updateOrientation();
       return;
     }
     const level = clamp(this.save.progress.unlocked, 1, TOTAL_LEVELS);
@@ -690,8 +677,9 @@ class BombManApp {
 
   startCampaign(levelNumber, options = {}) {
     requestFS();
-    if (this.isMobile && telegram.isPortrait) {
-      this.#updateOrientation(true);
+    const isPortrait = window.innerWidth < window.innerHeight;
+    if ((this.isMobile || isMobileClient) && isPortrait) {
+      this.#updateOrientation();
       this.#toast("Поверните телефон горизонтально");
       return;
     }
@@ -916,7 +904,6 @@ class BombManApp {
     this.game.setPaused(true);
     this.input.setEnabled(false);
     const player = this.game.players[0];
-    const hud = this.currentHud || {};
     const html = `
       <div class="modal-panel is-narrow" role="dialog" aria-modal="true" aria-label="Пауза">
         <div class="modal-head">
@@ -1470,7 +1457,6 @@ class BombManApp {
       let palette = this._levelCardCache.get(level);
       if (!palette) {
         palette = createPalette(level);
-        this._levelCardCardCache?.set(level, palette);
         this._levelCardCache.set(level, palette);
       }
       const unlocked = level <= progress.unlocked;
@@ -1653,14 +1639,14 @@ class BombManApp {
     });
     const panel = this.dom.modalRoot.querySelector(".modal-panel");
     if (!panel) return;
-    // Tabs.
+
     panel.querySelectorAll("[data-settings-tab]").forEach((button) => {
       button.addEventListener("click", () => {
         panel.querySelectorAll("[data-settings-tab]").forEach((item) => item.classList.toggle("is-active", item === button));
         panel.querySelectorAll("[data-settings-pane]").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.settingsPane === button.dataset.settingsTab));
       });
     });
-    // Toggles.
+
     panel.querySelectorAll("[data-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.dataset.toggle;
@@ -1676,7 +1662,7 @@ class BombManApp {
         this.audio.play("click", { volume: 0.6 });
       });
     });
-    // Sliders.
+
     panel.querySelectorAll("[data-range]").forEach((input) => {
       const key = input.dataset.range;
       const update = () => {
@@ -1690,7 +1676,7 @@ class BombManApp {
       input.addEventListener("input", update);
       input.addEventListener("change", update);
     });
-    // Segmented options.
+
     panel.querySelectorAll("[data-segment]").forEach((segment) => {
       const key = segment.dataset.segment;
       segment.querySelectorAll("button").forEach((button) => {
@@ -1708,7 +1694,7 @@ class BombManApp {
         });
       });
     });
-    // Key bindings.
+
     panel.querySelectorAll("[data-bind-player]").forEach((button) => {
       button.addEventListener("click", () => {
         if (this.input.isListening()) return;
@@ -1723,12 +1709,6 @@ class BombManApp {
             button.textContent = original;
             return;
           }
-          const conflict = ["p1", "p2"].some((otherPlayer) =>
-            Object.entries(this.settings.keys[otherPlayer]).find(
-              ([otherAction, otherCode]) =>
-                otherCode === code && !(otherPlayer === player && otherAction === action)
-            )
-          );
           if (code === "Escape") {
             button.textContent = original;
             return;
@@ -1743,9 +1723,6 @@ class BombManApp {
             return;
           }
 
-          // A key may already belong to the other player. Clear those bindings
-          // instead of swapping: the player who takes the key gets it, the
-          // other player's conflicting action becomes intentionally unbound.
           const cleared = [];
           for (const otherPlayer of ["p1", "p2"]) {
             if (otherPlayer === player) continue;
@@ -1779,6 +1756,7 @@ class BombManApp {
         });
       });
     });
+
     panel.querySelector("[data-settings-reset-keys]")?.addEventListener("click", () => {
       this.settings.keys = JSON.parse(JSON.stringify(DEFAULT_KEYS));
       this.save.updateSettings({ keys: this.settings.keys });
@@ -1788,11 +1766,11 @@ class BombManApp {
       this.#buildSettingsPanel(returnToPause);
       this.#toast("Клавиши сброшены");
     });
+
     panel.querySelector("[data-settings-reset-progress]")?.addEventListener("click", () => {
       this.#confirmResetProgress();
     });
-    // Focus trapping is intentionally light; Escape and close buttons are
-    // always available, and all controls are keyboard reachable.
+
     setTimeout(() => panel.querySelector(".settings-tab")?.focus(), 50);
   }
 
@@ -1904,7 +1882,6 @@ class BombManApp {
         panel.querySelectorAll("[data-codex-pane]").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.codexPane === button.dataset.codexTab));
       });
     });
-    // Provide CSS support for hidden panes.
     panel?.querySelectorAll(".codex-pane").forEach((pane) => {
       if (!pane.classList.contains("is-active")) pane.style.display = "none";
     });
@@ -1996,17 +1973,25 @@ class BombManApp {
   // Orientation & visibility
   // -------------------------------------------------------------------------
 
-  #updateOrientation(force = false) {
-    if (!this.booted) return;
-    const shouldShow = this.isMobile && telegram.isPortrait && (!this.allowPortrait || force);
+  #updateOrientation() {
+    const isPortrait = window.innerWidth < window.innerHeight;
+    const isMobileDevice = this.isMobile || isMobileClient;
+    const shouldShow = isMobileDevice && isPortrait;
+
+    if (this.dom.orientation) {
+      if (shouldShow) {
+        this.dom.orientation.style.display = "flex";
+      } else {
+        this.dom.orientation.style.display = "";
+      }
+    }
+
     if (shouldShow) {
-      this.dom.orientation.hidden = false;
       if (this.screen === "game" && this.game.state === "playing") {
         this.game.setPaused(true);
         this.input.setEnabled(false);
         this.pausedByOrientation = true;
       } else if (this.screen === "game" && this.game.state === "intro" && this.introActive) {
-        // A level intro must not finish behind the rotation prompt.
         this.#clearIntroTimers();
         this.closeModal({ silent: true });
         this.game.state = "paused";
@@ -2014,7 +1999,6 @@ class BombManApp {
         this.pausedByOrientation = true;
       }
     } else {
-      this.dom.orientation.hidden = true;
       if (this.pausedByOrientation) {
         this.pausedByOrientation = false;
         if (this.game.state === "paused" && !this.activeModal) this.resumeGame();
@@ -2060,7 +2044,6 @@ waitForTelegramSdk().then(() => {
   telegram.refresh();
   const app = new BombManApp();
 
-  // Expose a tiny, explicit debug surface for automated smoke tests.
   window.BombManDebug = {
     app,
     startCampaign: (level = 1) => app.startCampaign(level),

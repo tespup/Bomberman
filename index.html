@@ -17,10 +17,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="./src/styles.css" />
+  <style>
+    #rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #060913;
+      color: #fff;
+      z-index: 99999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      font-family: 'Unbounded', 'Manrope', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.8;
+      letter-spacing: 0.04em;
+    }
+
+    @media screen and (orientation: portrait) and (hover: none) and (pointer: coarse) {
+      #rotate-overlay {
+        display: flex;
+      }
+    }
+  </style>
   <!-- Async: a blocked telegram.org request must not leave a blank Mini App. -->
   <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.dispatchEvent(new Event('telegram-sdk-ready'))"></script>
 </head>
 <body data-screen="home" class="is-loading">
+  <!-- ПОВОРОТ ТЕЛЕФОНА -->
+  <div id="rotate-overlay">
+    <div>ПОВЕРНИТЕ ТЕЛЕФОН<br>ГОРИЗОНТАЛЬНО</div>
+  </div>
+
   <div id="app">
     <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
     <div class="ambient-grain" aria-hidden="true"></div>
@@ -267,19 +298,6 @@
         <span class="game-footer-right"><i class="live-dot"></i><span id="fpsLabel">60 FPS</span></span>
       </footer>
     </section>
-  </div>
-
-  <!-- ПОВОРОТ ТЕЛЕФОНА -->
-  <div class="orientation-overlay" id="orientationOverlay" hidden>
-    <div class="rotate-visual">
-      <div class="phone-outline"><span class="phone-notch"></span><span class="phone-screen"><i></i><i></i><i></i></span></div>
-      <span class="rotate-arrow">↻</span>
-    </div>
-    <span class="eyebrow">ПОЛНЫЙ ЭКРАН</span>
-    <h2>Поверните телефон</h2>
-    <p>BombMan создан для горизонтальной ориентации. Так арена, стик и кнопки поместятся идеально.</p>
-    <div class="rotate-tips"><span><i>1</i> Поверните устройство</span><span><i>2</i> Играйте двумя пальцами</span></div>
-    <button class="text-button subtle" data-action="force-portrait">Остаться в меню без игры</button>
   </div>
 
   <!-- СТАРТОВЫЙ ЭКРАН -->
